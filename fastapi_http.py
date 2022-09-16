@@ -11,7 +11,7 @@ SETTINGS_SERTIFICATE = {
     # specify the path to the user certificate (archive)
     'user_certificate': os.path.join('./', 'certificates', 'bundle-no-pin.zip')
 }
-URL = 'http://localhost:8001'  # localhost:8095'
+URL = 'http://localhost:8095'  # localhost:8095'
 
 
 def installation_license():
@@ -53,7 +53,7 @@ def document_signing(dir_no_signed, dir_signed: str):
         'Accept': 'application/json',
         'Content-Type': 'multipart/form-data'
     }
-    response = requests.post(url_sign, files=files)
+    response = requests.post(url_sign, files=files, params={'pin': '1111'})
     with open(os.path.join(dir_signed, json.loads(response.text)['filename']), 'w') as new_file:
         new_file.write(json.loads(response.text)['signedContent'])
 
@@ -84,26 +84,26 @@ def signature_verification(original_file, signed_file: str):
     print(json.loads(response.text)['verifyContent'])
 
 
-installation_license()
-installation_certificates_root(SETTINGS_SERTIFICATE['root_certificate'])
-installation_certificates_user(SETTINGS_SERTIFICATE['user_certificate'])
+def main():
+    no_signed_dir = os.path.join('./', 'no_signed')
+    signed_dir = os.path.join('./', 'signed')
+    list_name_no_signed_files = os.listdir(no_signed_dir)
+
+    for name_file in list_name_no_signed_files:
+        document_signing(os.path.join(no_signed_dir, name_file), signed_dir)
+
+    list_name_signed_files = os.listdir(signed_dir)
+
+    # list_name_no_signed_files.sort()
+    # list_name_signed_files.sort()
+    #
+    # for name_file in list_name_no_signed_files:
+    #     signature_verification(os.path.join(no_signed_dir, name_file), os.path.join(signed_dir, f'{name_file}.sig'))
+
+    unsigned_dir = os.path.join('./', 'unsigned')
+    for name_file in list_name_signed_files:
+        decryption_signed_document(os.path.join(signed_dir, name_file), unsigned_dir)
 
 
-no_signed_dir = os.path.join('./', 'no_signed')
-signed_dir = os.path.join('./', 'signed')
-list_name_no_signed_files = os.listdir(no_signed_dir)
-
-for name_file in list_name_no_signed_files:
-    document_signing(os.path.join(no_signed_dir, name_file), signed_dir)
-
-list_name_signed_files = os.listdir(signed_dir)
-
-list_name_no_signed_files.sort()
-list_name_signed_files.sort()
-
-for name_file in list_name_no_signed_files:
-    signature_verification(os.path.join(no_signed_dir, name_file), os.path.join(signed_dir, f'{name_file}.sig'))
-
-unsigned_dir = os.path.join('./', 'unsigned')
-for name_file in list_name_signed_files:
-    decryption_signed_document(os.path.join(signed_dir, name_file), unsigned_dir)
+if __name__ == '__main__':
+    main()

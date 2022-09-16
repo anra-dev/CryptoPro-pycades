@@ -10,12 +10,16 @@ async def parse_meta(lists: str):
 
 async def certificate_info(cert):
     cert_info = {}
-    pk = cert.PrivateKey
-    cert_info['privateKey'] = {
-            'providerName': pk.ProviderName,
-            'uniqueContainerName': pk.UniqueContainerName,
-            'containerName': pk.ContainerName,
-    }
+    try:
+        pk = cert.PrivateKey
+    except Exception as e:
+        print(e)
+    else:
+        cert_info['privateKey'] = {
+                'providerName': pk.ProviderName,
+                'uniqueContainerName': pk.UniqueContainerName,
+                'containerName': pk.ContainerName,
+        }
     algo = cert.PublicKey().Algorithm
     cert_info['algorithm'] = {
         'name': algo.FriendlyName,

@@ -1,3 +1,4 @@
+import uvicorn
 import os
 import shutil
 import pycades
@@ -18,7 +19,7 @@ from certificate.finder import \
     signature_data, \
     signature_data_pin
 from certificate.info import certificate_info
-from fastapi.staticfiles import StaticFiles
+
 
 app = FastAPI()
 
@@ -93,9 +94,11 @@ async def signer_file(file: UploadFile = File(...), pin: Optional[str] = None):
 async def unsigner_file(file: UploadFile = File(...)):
     _signedData = pycades.SignedData()
     _signedData.VerifyCades((await file.read()).decode(), pycades.CADESCOM_CADES_BES)
-    return JSONResponse(content={'unsignedContent': _signedData.Content,
-                                 'filename': f"{file.filename.replace('.sig', '')}"
-                                 })
+    content = {'unsignedContent': _signedData.Content,
+               'filename': f"{file.filename.replace('.sig', '')}",
+               'certificate': await certificate_info(_signedData.Certificates.Item(1))
+               }
+    return JSONResponse(content)
 
 
 @app.post('/verify')
@@ -112,3 +115,7 @@ async def verified_file(original_file: UploadFile = File(...), signed_file: Uplo
     os.remove(tmp_original)
     os.remove(tmp_signed)
     return JSONResponse(content={'verifyContent': subject_name})
+
+
+if __name__ == '__main__':
+    uvicorn.run("main:app", host='0.0.0.0', port=8000, reload=True)
